@@ -7,9 +7,9 @@ class Player(ABC):
 
     Attributes:
         id (UUID): Unique identifier for the player.
-        icon ('X' or 'O'): The player's icon used in the game. (set during registration)
-        board_width (int):  Number of Horizontal Elements (set to 8)
-        board_height (int): Number of Vertical Elements (set to 7)
+        icon: The player's icon used in the game. (set during registration)
+        board_width (int):  Number of Horizontal Elements 
+        board_height (int): Number of Vertical Elements
     """
 
     def __init__(self) -> None:
@@ -22,52 +22,43 @@ class Player(ABC):
     @abstractmethod
     def register_in_game(self) -> str:
         """
-        Register the player in the game and assign an icon.
-        
+        Register the player in the game and assign the player an icon.
+
         Returns:
             str: The player's icon.
-        
-        Raises:
-            NotImplementedError: If the method is not implemented in a subclass.
+
         """
         raise NotImplementedError("Subclasses must implement 'register_in_game'")
 
     @abstractmethod
     def is_my_turn(self) -> bool:
-        """
-        Check if it's the player's turn.
-        
+        """ 
+        Check if it is the player's turn.
+
         Returns:
             bool: True if it's the player's turn, False otherwise.
-        
-        Raises:
-            NotImplementedError: If the method is not implemented in a subclass.
         """
         raise NotImplementedError("Subclasses must implement 'is_my_turn'")
 
     @abstractmethod
     def get_game_status(self) -> tuple[str,str,bool,int]:
         """
-        Get the current game status.
-        
-        Returns:
-            tuple: A tuple containing (active_icon, active_player, winner, turn_number).
-        
-        Raises:
-            NotImplementedError: If the method is not implemented in a subclass.
+        Get the game's current status.
+            - who is the active player?
+            - is there a winner? if so who?
+            - what turn is it?
+      
         """
         raise NotImplementedError("Subclasses must implement 'get_game_status'")
 
     @abstractmethod
-    def make_move(self) -> bool:
+    def make_move(self) -> int:
         """
-        Prompt the player to make a move.
+        Prompt the player to make a move. 
         
         Returns:
-            bool: True if the move was successful, False otherwise.
+            int: The column chosen by the player for the move.
         
-        Raises:
-            NotImplementedError: If the method is not implemented in a subclass.
         """
         raise NotImplementedError("Subclasses must implement 'make_move'")
 
@@ -75,9 +66,6 @@ class Player(ABC):
     def visualize(self)->None:
         """
         Visualize the current board state
-
-        Raises:
-            NotImplementedError: If the method is not implemented in a subclass.
         """
         raise NotImplementedError("Subclasses must implement 'visualize'")
     
@@ -85,8 +73,5 @@ class Player(ABC):
     def celebrate_win(self)->None:
         """
         Players personal "celebration" on how to visualize a Win
-
-        Raises:
-            NotImplementedError: If the method is not implemented in a subclass.
         """
         raise NotImplementedError("Subclasses must implement 'celebrate_win'")

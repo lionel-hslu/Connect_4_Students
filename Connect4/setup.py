@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 """
-Installation of all required packages to run SenseHat
+Installation of all required packages to Connect4
 """
 setup(
     name='Connect4',
