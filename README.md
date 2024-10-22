@@ -74,7 +74,11 @@ The local players use an available **instance** of **the same `Connect4` class**
 ### Local Interactions
 If played locally (2 players on same device), the interaction between the classes is as follows:
 
-![local_interaction](imgs/local_interaction.png)
+
+<div style="text-align: center;">
+<img src="imgs/local_interaction.png" alt="local_interaction" width="450"/>
+</div>
+
 
 **Note**: The ``players`` can either be controlled through the `CLI`, or the `SenseHat` (on Raspi).
 
@@ -82,7 +86,10 @@ If played locally (2 players on same device), the interaction between the classe
 If you play remotely (2 players on 2 devices),
 the interaction between the classes is as follows:
 
-![remote_interaction](imgs/remote_interaction.png)
+<div style="text-align: center;">
+<img src="imgs/remote_interaction.png" alt="remote_interaction" width="450"/>
+</div>
+
 
 **Note**: Here the ``players`` can also either be controlled through the `CLI`, or the `SenseHat` (on Raspi).
 
