@@ -1,145 +1,165 @@
 # Raspi Connect 4
 Student Project from **Python Advanced**, HS24
 
-## Administratives
-- Projekt als Semesterleistung (40%)
-- 2er-Teams
-- Spielvarianten:
-  - Lokal auf dem PC
-  - Auf dem Raspberry Pi sowie im Terminal
-  - Über das Netzwerk via REST-API und Flask-Webserver
-  - Implementierung eines Bots (Wettbewerb am Ende des Semesters)
-- Video 4-5 Minuten zum Projekt:
-  - Aufbau
-  - Schwierigkeiten / Highlights etc.
+## Administrative Information
+- Project as a semester performance (40%)
+- Teams of two
+- Game modes:
+  - Local on the PC (`Player_Local`)
+    - On the Raspberry Pi and in the terminal
+  - Over the network via REST API and Flask web server (`Player_Remote`)
+    - On the Raspberry Pi and in the terminal
+  - Implementation of a bot (competition at the end of the semester)
+- A 4-5 minute video about the project:
+  - Overview
+  - Difficulties / Highlights, etc.
   - Demo
 
+
 ## Game Architecture
-Das **Connect 4 Game** kann auf 4 verschiedene Arten gespielt werden:
-- Lokal (2 Player) auf `CLI`
-- Lokal (2 Player) auf `SenseHat`
-- Remote (2x 1 Player) auf `CLI`
-- Remote (2x 1 Player) auf `SenseHat`
+The **Connect 4 Game** can be played in 4 different ways:
+- locally (2 players) on `CLI`
+- locally (2 players) on `SenseHat`
+- remote (2x 1 player) on `CLI`
+- remote (2x 1 player) on `SenseHat`
 
-![rough_draft](./imgs/class_diagramm.png)
+### Local and Remote Game Variants
+The different game variants are based on the interaction between the **`Player`** classes and the **`Connect4`** game, with the key distinction being how the game coordination is handled:
 
-Diese verschiedenen Spielvarianten unterscheiden sich hauptsächlich durch **unterschiedliche `Player` Klassen**, die alle bestimmte **abstrakte Methoden** auf unterschiedliche Weise implementieren. Die wichtigsten abstrakten Methoden sind:
-- `make_move`: Ermöglicht es dem Benutzer, eine Spalte auszuwählen, in die eine Münze fallen gelassen wird
-- `visualize`: Visualisiert den aktuellen Board-Zustand für den Benutzer
-- `register_in_game`: Registriert den Player in einem bestimmten Game
-- `get_game_status`: Ruft den aktuellen Status des Games ab
+- **Local Games**: The `Coordinator_Local` has access to two local players and the **`Connect4`** instance. Both players interact directly with the game logic, making moves and visualizing the board either in the `CLI` or on the `SenseHat`. The entire game runs on the same device.
+
+- **Remote Games**: The `Coordinator_Remote` controls one player, who communicates with the **`Connect4`** logic via REST API endpoints exposed by the **`Connect4Server`**. In this case, the game logic runs on a server, and both players interact with the game over the network by sending requests to the server.
+
+The **`Player`** classes implement certain **abstract methods** to manage the gameplay flow, whether local or remote. The key methods include:
+
+- **`make_move`**: Allows the player to select a column to drop a coin.
+- **`visualize`**: Visualizes the current board state.
+- **`register_in_game`**: Registers the player in the game.
+- **`get_game_status`**: Retrieves the current game status.
+- **`celebrate_win`**: Performs the player's winning celebration.
+
+### Player Types
+- **`CLI Player`**: Input is handled through the console, and the board state is also displayed in the console.
+- **`SenseHat Player`**: Input is handled through the SenseHat joystick module, and the board state is displayed on the LED matrix of the SenseHat.
+
+<div style="text-align: center;">
+<img src="./imgs/class_diagramm.png" alt="class diagramm" width="250"/>
+</div>
 
 <div style="text-align: center;">
 <img src="./imgs/legend.png" alt="legend" width="250"/>
 </div>
 
 ## Classes
-Das komplette Game enthält die folgenden Klassen:
+The game consists of the following main classes:
 
-- `Connect4`: Enthält die **Game Logic**
-  - Details unter [Game](#connect4---game)
-- `Server`: Stellt Methoden aus `Connect4` für Remote-Player zur Verfügung
-  - Details unter [Server](#server)
-- `Player`: Abstrakte Klasse (beschreibt, was ein Player können muss)
-  - `Player_Local`: Player, der Methoden aus einem lokal verfügbaren `Connect4`-Objekt verwendet.
-    - `Player_Raspi_Local`: Lokaler Player auf einem Raspberry Pi (verwendet das `SenseHat`)
-    - Details unter [Local Player](#local-player)
-  - `Player_Remote`: Player, der **REST-API-Endpunkte** verwendet, um über den `Server` mit `Connect4` zu interagieren
-    - `Player_Raspi_Remote`: Remote Player auf einem Raspberry Pi (verwendet das `SenseHat`)
-    - Details unter [Remote Player](#remote-player)
+- **`Connect4`**: Contains the main game logic.
+  - More details in [Connect4 Game](#connect4---game)
+- **`Connect4Server`**: Exposes the methods from `Connect4` to remote players via API endpoints.
+  - More details in [Server](#server)
+- **`Player`**: Abstract class defining what a player should be able to do.
+  - `Player_Local`: Uses methods from the locally available `Connect4` instance.
+    - `Player_Raspi_Local`: Local player on a Raspberry Pi (using the `SenseHat`).
+    - More details in [Local Player](#local-player)
+  - `Player_Remote`: Uses **REST API endpoints** to interact with the `Connect4` game through the server.
+    - `Player_Raspi_Remote`: Remote player on a Raspberry Pi (using the `SenseHat`).
+    - More details in [Remote Player](#remote-player)
 
-- `Coordinator_Local`: Koordiniert **2 lokale Player** (auf demselben Gerät)
-  - Details unter [Local Interactions](#local-interactions)
-- `Coordinator_Remote`: Koordiniert **1 lokalen Player** (auf demselben Gerät) mit **1 Remote Player** (auf einem anderen Gerät) durch Kommunikation mit dem ``Server``.
-  - Details unter [Remote Interaction](#remote-interaction)
+- **`Coordinator_Local`**: Coordinates **2 local players** (on the same device).
+  - More details in [Local Interaction](#local-interactions)
+- **`Coordinator_Remote`**: Coordinates **1 local player** (same device) with **1 remote player** (different device) by communicating with the `server`.
+  - More details in [Remote Interaction](#remote-interaction)
 
 ### Connect4 - Game
-Diese Klasse enthält die grundlegende Game Logic.
-Sie definiert den **Game State** (`get_game_state()`):
-- **was** ein **erlaubter Zug** ist
-- **wann** ein Player **gewinnt** (`winner`)
-- **wessen** **Zug** es ist (`active_player`)
-- **welcher** **Zug** gerade stattfindet (`turn_number`)
+This class contains the essential game logic:
 
-Außerdem kann sie den aktuellen **Board-Zustand** zurückgeben (`get_board()`). Sie gibt dann ein `8x7 numpy array` zurück, das enthält:
-  - `'X'` für einen Player
-  - `'O'` für den anderen Player
-  - `''` für die leeren Felder
+- Defines the **game state** (`get_game_state()`):
+  - **what** a legal move is
+  - **when** a player wins (`winner`)
+  - **whose** turn it is (`active_player`)
+  - **which** turn it is (`turn_number`)
+
+- Returns the current **board state** (`get_board()`): An `8x7 numpy array` containing:
+  - `'X'` for one player
+  - `'O'` for the other player
+  - `''` for empty spots
+
+- **Move validation** (`check_move()`): Checks whether a move is legal and updates the board accordingly.
+
+- **Winner detection** (`detect_win()`): Detects if a player has four consecutive pieces in a row (horizontally, vertically, or diagonally).
 
 ### Server
-Der ``Connect4_Server`` - Server bietet **vier API-Endpunkte** an und stellt die Hauptmethoden (beschrieben unter [Game](#connect4---game) aus der `Connect4`-Klasse) zur Verfügung.
+The **`Connect4Server`** exposes the game logic to remote players through four API endpoints:
 
-Diese werden in einer **Swagger-Dokumentation** beschrieben, die unter [http://127.0.0.1:5000/swagger/connect4/](http://127.0.0.1:5000/swagger/connect4/) zugänglich ist, sobald der **Server läuft**.
+1. **`/connect4/status`** (GET): Returns the current game status.
+2. **`/connect4/register`** (POST): Registers a player in the game.
+3. **`/connect4/board`** (GET): Returns the current board state.
+4. **`/connect4/check_move`** (POST): Validates a move and updates the board if the move is legal.
+
+These endpoints allow remote players to interact with the **`Connect4`** game instance running on the server. The API is documented using Swagger, available at:  
+[http://127.0.0.1:5000/swagger/connect4/](http://127.0.0.1:5000/swagger/connect4/)
 
 ![swagger_api](./imgs/swagger_api.PNG)
 
-### Remote Player
-Die Remote-Player verwenden die **laufenden API-Endpunkte**, um Informationen an die ``Connect4``-Klasse zu senden und von dieser zu empfangen.
-
-### Local Player
-Die lokalen Player verwenden eine verfügbare **Instanz** der **gleichen `Connect4`-Klasse**, um Informationen zu demselben Game zu senden und zu empfangen.
-
 ### Local Interactions
-Wenn lokal gespielt wird (2 Player auf demselben Gerät), erfolgt die Interaktion zwischen den Klassen wie folgt:
+In a local game (2 players on the same device), the interaction between the classes is as follows:
 
 <div style="text-align: center;">
 <img src="./imgs/local_interaction.png" alt="local_interaction" width="450"/>
 </div>
 
-**Hinweis**: Die ``Player`` können entweder über das `CLI` oder das `SenseHat` (auf dem Raspberry Pi) gesteuert werden.
+**Note**: The players can either be controlled via the `CLI` or the `SenseHat`.
 
-### Remote Interactions
-Wenn remote gespielt wird (2 Player auf 2 Geräten), erfolgt die Interaktion zwischen den Klassen wie folgt:
+### Remote Interaction
+In a remote game (2 players on different devices), the interaction between the classes is as follows:
 
 <div style="text-align: center;">
 <img src="./imgs/remote_interaction.png" alt="remote_interaction" width="450"/>
 </div>
 
-**Hinweis**: Auch hier können die ``Player`` entweder über das `CLI` oder das `SenseHat` (auf dem Raspberry Pi) gesteuert werden.
+**Note**: Here, the players can also be controlled either via the `CLI` or the `SenseHat`.
 
 ## Play the Game
-
-Stelle sicher, dass du die [Requirements](#requirements) erfüllst.
-Versuche dann, ein [lokales](#local-game) oder [remote](#remote-game) Game zu starten:
+Make sure you meet the [Requirements](#requirements), and then start either a [local](#local-game) or [remote](#remote-game) game:
 
 ### Local Game
-
-1. Starte `local_coordinator.py` in einem **Terminal**
-   - Erstellt **2 lokale Player**
-     - Entweder ``CLI`` oder `SenseHat`-Player (Standard ist `CLI`)
+1. Start the `local_coordinator.py` in a **terminal**.
+   - This creates **2 local players**.
+     - You can choose between `CLI` or `SenseHat` players (default is `CLI`).
 
 ### Remote Game
-1. Starte `server.py` in einem **ersten Terminal**
-   - Notiere die `IP-Adresse` des `Servers`
-2. Starte `remote_coordinator.py` in einem **zweiten Terminal**
-    - Gib die `IP-Adresse` des `Servers` als Ziel an
-    - Spiele als **Player 1** im `CLI` oder auf dem `SenseHat` (Standard ist `CLI`)
-3. Starte `remote_coordinator.py` in einem **dritten Terminal**
-   - Gib die `IP-Adresse` des `Servers` als Ziel an
-   - Spiele als **Player 2** im `CLI` oder auf dem `SenseHat` (Standard ist `CLI`)
+1. Start `server.py` in a **first terminal**.
+   - Note the `IP address` of the server.
+2. Start `remote_coordinator.py` in a **second terminal**.
+   - Provide the `IP address` of the server as the target.
+   - Play as **Player 1** on the `CLI` or the `SenseHat` (default is `CLI`).
+3. Start `remote_coordinator.py` in a **third terminal**.
+   - Provide the `IP address` of the server as the target.
+   - Play as **Player 2** on the `CLI` or the `SenseHat` (default is `CLI`).
 
 ## Requirements
-Um alle Anforderungen für das Game zu erfüllen, gehe wie folgt vor:
-1. Erstelle eine neue `conda`- oder `venv`-**Umgebung** und **aktiviere** sie.
-2. Wechsle mit `cd` in diesen Ordner des Spieles (wo das `setup.py` File ist)
-3. Führe den folgenden Befehl aus:
+To fulfill all requirements to run this game, follow these steps:
+
+1. Create a new `conda` or `venv` **environment** and **activate** it.
+2. `cd` into this folder.
+3. Execute the following command:
 
 ```bash
 pip install .
 ```
 
+  This **installs all dependencies** listed in `setup.py`.
 
-Dies **installiert alle Abhängigkeiten**, die in der `setup.py` aufgelistet sind.
+4. Play the game in any of the [available versions](#game-architecture).
 
-4. Spiele das Game in einer der [verfügbaren Versionen](#game-architecture).
+## Raspberry Pi
+The Raspberry Pi requires a quick **fix** to allow files to be moved, changed, etc.
 
-# Raspberry Pi
-Der Raspberry Pi benötigt eine schnelle **Korrektur**, um das Verschieben, Ändern usw. von Dateien zu ermöglichen.
-
-1. Wechsle in den Ordner ``home/pi``
-
-2. **Ändere die Berechtigungen** des `student`-Ordners (und aller ``Unterordner``) mit:
+1. Navigate to the folder `home/pi`.
+2. **Change the permissions** of the `student` folder (and all sub-folders) using the following command:
 
 ```bash
 sudo chmod -R 777 student
 ```
+
+This ensures that you have the necessary permissions to move and modify files on the Raspberry Pi.
