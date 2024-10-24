@@ -43,7 +43,7 @@ The **`Player`** classes implement certain **abstract methods** to manage the ga
 - **`SenseHat Player`**: Input is handled through the SenseHat joystick module, and the board state is displayed on the LED matrix of the SenseHat.
 
 <div style="text-align: center;">
-<img src="./imgs/class_diagramm.png" alt="class diagramm" width="250"/>
+<img src="./imgs/class_diagramm.png" alt="class diagramm" width="450"/>
 </div>
 
 <div style="text-align: center;">
