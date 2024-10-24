@@ -1,6 +1,8 @@
 # Raspi Connect 4
 Student Project from **Python Advanced**, HS24
 
+Add something
+
 ## Administrative Information
 - Project as a semester performance (40%)
 - Teams of two
