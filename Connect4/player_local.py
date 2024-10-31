@@ -15,7 +15,7 @@ class Player_Local(Player):
             Must Implement all Methods from Abstract Player Class
 
         Parameters:
-            game (Connect4): Instance of Connect4 game passed through kwargs.
+            game (Connect4): Instance of Connect4 game
         
        
         """
