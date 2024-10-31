@@ -9,7 +9,7 @@ class Player_Local(Player):
     Local Player (uses Methods of the Game directly).
     """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, game:Connect4) -> None:
         """ 
         Initialize a local player.
             Must Implement all Methods from Abstract Player Class

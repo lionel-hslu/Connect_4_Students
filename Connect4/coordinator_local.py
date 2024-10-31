@@ -1,7 +1,7 @@
 
 
 from game import Connect4
-from player import Player
+from player_local import Player_Local
 
 
 class Coordinator_Local:
@@ -14,8 +14,8 @@ class Coordinator_Local:
 
     Attributes:
         game (Connect4):    Local Instance of a Connect4 Game
-        player1 (Player):   Local Instance of a Player 
-        player2 (Player):   Local Instance of a Player
+        player1 (Player_Local):   Local Instance of a Player 
+        player2 (Player_Local):   Local Instance of a Player
     """
 
     def __init__(self) -> None:
