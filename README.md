@@ -4,7 +4,7 @@ Student Project from **Python Advanced**, HS24
 
 - [Raspi Connect 4](#raspi-connect-4)
   - [Administrative Information](#administrative-information)
-  - [RaspberryPi](#raspberrypi)
+    - [RaspberryPi](#raspberrypi)
 - [Complete Game Description](#complete-game-description)
   - [Game Architecture](#game-architecture)
     - [Local and Remote Game Variants](#local-and-remote-game-variants)
@@ -45,7 +45,7 @@ Student Project from **Python Advanced**, HS24
     - Demo
 
 
-## RaspberryPi
+### RaspberryPi
 The raspberry pi will be collected **after the MEP**. If someone does not attend the MEP, please hand your RaspberryPi back in `SW14`.
 
 **Failure to return the RaspberryPi will result in an `F`** in this module.
