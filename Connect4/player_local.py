@@ -3,6 +3,7 @@
 import os
 from game import Connect4
 from player import Player
+import numpy as np
 
 
 class Player_Local(Player):
@@ -83,6 +84,7 @@ class Player_Local(Player):
         """
         os.system('cls' if os.name == 'nt' else 'clear')
         board = self.game.get_board()
+        board = np.where(board == '', ' ', board)
         
         print('│  0  │  1  │  2  │  3  │  4  │  5  │  6  │  7  │')
         print('╔═════╦═════╦═════╦═════╦═════╦═════╦═════╦═════╗')
