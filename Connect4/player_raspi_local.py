@@ -13,7 +13,7 @@ class Player_Raspi_Local(Player_Local):
             (uses Methods of Game and SenseHat)
     """
 
-    def __init__(self, game:Connect4, **kwargs) -> None:
+    def __init__(self, game:Connect4, sense:SenseHat, **kwargs) -> None:
         """ 
         Initialize a local Raspi player with a shared SenseHat instance.
 
@@ -25,16 +25,22 @@ class Player_Raspi_Local(Player_Local):
             ValueError: If 'sense' is not provided in kwargs.
         """
         # Initialize the parent class (Player_Local)
-        super().__init__(**kwargs)
+        self.game = game
+        self.sense = sense
+        
+        super().__init__(self.game, **kwargs)
+        
 
         # Extract the SenseHat instance from kwargs  (only if SHARED instance)
         # Remove Otherwise
+        '''
         try:
             self.sense: SenseHat = kwargs["sense"]
         except KeyError:
             raise ValueError(f"{type(self).__name__} requires a 'sense' (SenseHat instance) attribute")
-
-        # TODO: setup other Raspi stuff here
+        '''
+        self.sense.clear()
+        
 
     
     def register_in_game(self):
@@ -46,9 +52,11 @@ class Player_Raspi_Local(Player_Local):
         # first do normal register
         self.icon = super().register_in_game()          # call method of Parent Class (Player_Local)
 
-        # TODO: also set color of the player
-
-        raise NotImplementedError(f"Override register_in_game of Player_Raspi_Locap")
+        if self.icon == 'X':
+            self.color = (100,0,0)
+        
+        else:
+            self.color = (100,100,0)
 
     
     def visualize_choice(self, column:int)->None:
@@ -60,19 +68,28 @@ class Player_Raspi_Local(Player_Local):
             column (int):       potentially selected Column during Selection Process
         """
         
+        self.sense.set_pixel(column,0,self.color)
+        time.sleep(0.1)
+        self.sense.set_pixel(column,0,0,0,0)
+        
 
     def visualize(self) -> None:
         """
         Override Visualization of Local Player
             Also Visualize on the Raspi 
         """
-
-        # TODO: visualize Board on raspi
+        board = self.game.get_board()
+        
+        for i in range(7):
+            for j in range(8):
+                if board[i,j] == 'X':
+                    self.sense.set_pixel(j,i+1,100,0,0)
+                elif board[i,j] == 'O':
+                    self.sense.set_pixel(j,i+1,100,100,0)
 
         # OPTIONAL: also visualize on CLI
         super().visualize()
 
-        raise NotImplementedError(f" visualize on Raspi not yet implemented")
 
     def make_move(self) -> int:
         """
@@ -82,16 +99,68 @@ class Player_Raspi_Local(Player_Local):
         Returns:
             col (int):  Selected column (0...7)
         """
+        col = 0
         
-        raise NotImplementedError(f"make_move not yet implemented on Player_Raspi_Local")
-    
+        while True:
+            self.visualize_choice(col)
+            
+            for event in self.sense.stick.get_events():
+                if event.action == 'pressed':
+                    if event.direction == 'left':
+                        if col != 0:
+                            col -= 1
+                        else:
+                            col = 7
+                    
+                    elif event.direction == 'right':
+                        if col != 7:
+                            col += 1
+                        else:
+                            col = 0
+                            
+                    elif event.direction == 'middle':
+                        if self.game.check_move(col, self.id):
+                            return col
+                    
+            time.sleep(0.1)
+                
+                
+            '''
+                move = int(input())  # Convert input to integer
+                if 0 <= move <= 7:  # Check if move is within the valid range [0-7]
+                    if self.game.check_move(move, self.id):  # Use self.game to validate
+                        return move
+                    else:
+                        print('Invalid move! Column is full.')
+                else:
+                    print('Invalid input! Please enter a number between 0 and 7.')
+            except ValueError:
+                print('Invalid input! Please enter a number between 0 and 7.')
+            '''
     
     def celebrate_win(self) -> None:
         """
         Celebrate CLI Win of Raspi player
             Override Method of Local Player
         """
-        # TODO: Own Celebration Method on SenseHat
+        
+        winner = self.get_game_status()['winner']
+        
+        if winner == 'X':
+            color = (100,0,0)
+        else:
+            color = (100,100,0)
+            
+        pixels = [color]*64
+            
+        for i in range(10):
+            self.sense.set_pixels(pixels)
+            time.sleep(0.1)
+            self.sense.clear()
+            time.sleep(0.1)
+            
+        self.sense.clear()
+
 
         # Optional: also do CLI celebration
         super().celebrate_win()
