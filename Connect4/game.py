@@ -33,8 +33,10 @@ class Connect4:
         """
         self.p1 = None
         self.p2 = None
-        self.board = np.full((7,8), ' ')
-        self.turn_counter = 0
+        self.p1_icon = 'X'
+        self.p2_icon = 'O'
+        self.board = np.full((7,8), '')
+        self.turn_counter = -1
         self.winner = None
 
 
@@ -48,14 +50,26 @@ class Connect4:
             - is there a winner? if so who?
             - what turn is it?
         """
-        active_player = None
         
-        if self.turn_counter % 2:
-            active_player = self.p2
+        if self.turn_counter == -1:
+            active_player = None
+            active_id = None
+        
+        elif self.turn_counter % 2:
+            active_player = self.p2_icon
+            active_id = self.p2
         else:
-            active_player = self.p1
+            active_player = self.p1_icon
+            active_id = self.p1
         
-        return({'active_player': active_player, 'winner': self.winner, 'turn': self.turn_counter})
+        
+        
+        return({
+            'active_id': active_id,
+            'active_player': active_player,
+            'winner': self.winner,
+            'turn': self.turn_counter
+            })
 
     def register_player(self, player_id:uuid.UUID)->str:
         """ 
@@ -71,9 +85,13 @@ class Connect4:
         if self.p1 == None:
             self.p1 = player_id
             return('X')
-        else:
+        elif self.p2 == None:
             self.p2 = player_id
+            self.turn_counter +=1
             return('O')
+        
+        else:
+            return(False)
 
 
     def get_board(self)-> np.ndarray:
@@ -95,8 +113,8 @@ class Connect4:
             col (int):      Selected Column of Coin Drop
             player (str):   Player ID 
         """
-        if player_Id == self.get_status()['active_player']:
-            if self.board[0,column] == ' ':
+        if player_Id == self.get_status()['active_id']:
+            if self.board[0,column] == '':
                 
                 if player_Id == self.p1:
                     icon = 'X'
@@ -105,7 +123,7 @@ class Connect4:
                 
                 i = 1    
                 while True:
-                    if self.board[-i,column] == ' ':
+                    if self.board[-i,column] == '':
                         self.board[-i, column] = icon
                         break
                     else:

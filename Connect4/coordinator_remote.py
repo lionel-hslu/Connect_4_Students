@@ -1,5 +1,5 @@
 from time import sleep
-
+from player_remote import Player_Remote
 
 class Coordinator_Remote:
     """ 
@@ -26,7 +26,7 @@ class Coordinator_Remote:
         """
         self.api_url = api_url
 
-        # TODO initialize correct player
+        self.player = Player_Remote(self.api_url)
 
     def wait_for_second_player(self):
         """
@@ -35,8 +35,10 @@ class Coordinator_Remote:
         This method checks the game status until the second player is detected,
         indicating that the game can start.
         """
-        # TODO
-        raise NotImplementedError("Not yet implemented")
+        self.player.visualize()
+        print('Waiting for other Player.')
+        sleep(1)
+        
 
     def play(self):
         """ 
@@ -45,12 +47,31 @@ class Coordinator_Remote:
         This method manages the game loop, where players take turns making moves,
         checks for a winner, and visualizes the game board.
         """
-        # TODO
-        raise NotImplementedError("Not yet implemented")
+        self.player.icon = self.player.register_in_game()
+        while True:
+            status = self.player.get_game_status()
+            winner = status.get('winner')
+            active = status.get('active_id')
+            if winner:
+                self.player.celebrate_win()
+                break
+            
+            else:
+                if str(active) == str(self.player.id):
+                    self.player.visualize()
+                    self.player.make_move()
+                else:
+                    self.wait_for_second_player()
+                
+        
+        
+        
+        
+        
 
 # To start a game
 if __name__ == "__main__":
-    api_url = "http://localhost:5000"  # Connect 4 API server URL
+    api_url = "http://127.0.0.1:5000"  # Connect 4 API server URL
     
     # Uncomment the following lines to specify different URLs
     # pc_url = "http://172.19.176.1:5000"

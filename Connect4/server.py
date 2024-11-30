@@ -6,7 +6,7 @@ from flask_swagger_ui import get_swaggerui_blueprint        # for swagger docume
 
 
 # local includes
-# from game import Connect4
+from game import Connect4
 
 
 class Connect4Server:
@@ -26,7 +26,7 @@ class Connect4Server:
         - Expose API Methods
         """
 
-        #self.game = Connect4()  # Connect4 game instance
+        self.game = Connect4()  # Connect4 game instance
         self.app = Flask(__name__)  # Flask app instance
 
         # Swagger UI Configuration
@@ -63,28 +63,55 @@ class Connect4Server:
         # 1. Expose get_status method
         @self.app.route('/connect4/status', methods=['GET'])
         def get_status():
-            # TODO: return a jasonified version of the game status
-            pass
+            data = self.game.get_status()
+            
+            return jsonify(data), 200
 
 
         # 2. Expose register_player method
         @self.app.route('/connect4/register', methods=['POST'])
         def register_player():
-            # TODO Register the player and return the ICON
-            pass
+            data = request.get_json()
+            player_id = data.get('player_id')
+            
+            if not player_id:
+                return jsonify({'error': 'Invalid input'}), 400
+            
+            icon = self.game.register_player(player_id)
+            
+            if icon:
+                return jsonify({'player_icon': icon}), 200
+            
+            
+            else:
+                return jsonify({'error': 'Game Full'}), 400
 
 
         # 3. Expose get_board method
         @self.app.route('/connect4/board', methods=['GET'])
         def get_board():
-            # TODO correctly return the Board
-            pass
+            board = self.game.get_board()
+            board_list = board.flatten().tolist()
+            
+            return jsonify({'board': board_list})
+            
 
         # 4. Expose move method
         @self.app.route('/connect4/make_move', methods=['POST'])
         def make_move():
-            # TODO: make move and return success if made
-            pass
+            
+            
+            data = request.get_json()
+            player_id = data.get('player_id')
+            column = data.get('column')
+            
+            
+            
+            if self.game.check_move(column, player_id):
+                return jsonify({"success": True}), 200
+            
+            else:
+                return jsonify({'error': 'Invalid input'}), 400
 
 
     def run(self, debug=True, host='0.0.0.0', port=5000):

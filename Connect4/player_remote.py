@@ -1,16 +1,16 @@
 
-
 import os
-from game import Connect4
+import requests
 from player import Player
+import numpy as np
 
 
-class Player_Local(Player):
+class Player_Remote(Player):
     """ 
     Local Player (uses Methods of the Game directly).
     """
 
-    def __init__(self, game:Connect4) -> None:
+    def __init__(self, api_url: str) -> None:
         """ 
         Initialize a local player.
             Must Implement all Methods from Abstract Player Class
@@ -21,7 +21,7 @@ class Player_Local(Player):
        
         """
         super().__init__()  # Initialize id and icon from the abstract Player class
-        self.game = game
+        self.api_url = api_url
 
 
     def register_in_game(self) -> str:
@@ -31,7 +31,22 @@ class Player_Local(Player):
         Returns:
             str: The player's icon.
         """
-        return(self.game.register_player(self.id))
+        url = f"{self.api_url}/connect4/register"
+        data = {
+            'player_id' : str(self.id)
+        }
+        
+        
+        response = requests.post(url, json=data)
+        
+        
+        if response.status_code == 200:
+            data = response.json()
+            player_icon = data.get('player_icon')
+            return(player_icon)
+        
+        else:
+            return(response.status_code)
 
 
     def is_my_turn(self) -> bool:
@@ -41,7 +56,7 @@ class Player_Local(Player):
         Returns:
             bool: True if it's the player's turn, False otherwise.
         """
-        return(self.id == self.get_game_status()['active_id'])
+        return(self.id == self.get_game_status()['active_player'])
 
     def get_game_status(self):
         """
@@ -51,7 +66,11 @@ class Player_Local(Player):
             - what turn is it?
       
         """
-        return(self.game.get_status())
+        url = f"{self.api_url}/connect4/status"
+        
+        response = requests.get(url)
+        data = response.json()
+        return(data)
 
     def make_move(self) -> int:
         """ 
@@ -60,12 +79,24 @@ class Player_Local(Player):
         Returns:
             int: The column chosen by the player for the move.
         """
+        url = f"{self.api_url}/connect4/make_move"
+        
         print(f"It's {self.icon}'s turn, which column do you select? [0-7]")
+        
+        
         while True:
             try:
                 move = int(input())  # Convert input to integer
                 if 0 <= move <= 7:  # Check if move is within the valid range [0-7]
-                    if self.game.check_move(move, self.id):  # Use self.game to validate
+                    data = {
+                            "column": move,
+                            "player_id": str(self.id)
+                            }
+                    
+                    response = requests.post(url, json=data)
+                    print(response)
+                    
+                    if response.status_code == 200:  # Use self.game to validate
                         return move
                     else:
                         print('Invalid move! Column is full.')
@@ -81,9 +112,18 @@ class Player_Local(Player):
         """
         Visualize the current state of the Connect 4 board by printing it to the console.
         """
-        os.system('cls' if os.name == 'nt' else 'clear')
-        board = self.game.get_board()
         
+        
+        url = f"{self.api_url}/connect4/board"
+        
+        response = requests.get(url)
+        data = response.json()
+        
+        board = np.array(data["board"]).reshape(7, 8)
+        board = np.where(board == '', ' ', board)
+        
+        
+        os.system('cls' if os.name == 'nt' else 'clear')
         print('│  0  │  1  │  2  │  3  │  4  │  5  │  6  │  7  │')
         print('╔═════╦═════╦═════╦═════╦═════╦═════╦═════╦═════╗')
         for i in range(13):
@@ -100,5 +140,6 @@ class Player_Local(Player):
         """
         Celebration of Local CLI Player
         """
+        self.visualize()
         winner = self.get_game_status()['winner']
         print(f'Player {winner} won.')
