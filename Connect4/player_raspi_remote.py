@@ -1,19 +1,19 @@
 import time
 
+import requests
+from player_remote import Player_Remote
+import numpy as np
 from sense_hat import SenseHat
 
-from game import Connect4
-from player_remote import Player_Remote
 
-
-class Player_Raspi_Local(Player_Remote):
+class Player_Raspi_Remote(Player_Remote):
     """ 
     remote Raspi Player 
         Same as remote Player -> with some changed methods
             (uses Methods of Game and SenseHat)
     """
 
-    def __init__(self, game:Connect4, sense:SenseHat, **kwargs) -> None:
+    def __init__(self, api_url: str, sense:SenseHat, **kwargs) -> None:
         """ 
         Initialize a local Raspi player with a shared SenseHat instance.
 
@@ -25,10 +25,10 @@ class Player_Raspi_Local(Player_Remote):
             ValueError: If 'sense' is not provided in kwargs.
         """
         # Initialize the parent class (Player_Local)
-        self.game = game
         self.sense = sense
+        self.api_url = api_url
         
-        super().__init__(self.game, **kwargs)
+        super().__init__(self.api_url, **kwargs)
         
 
         # Extract the SenseHat instance from kwargs  (only if SHARED instance)
@@ -78,7 +78,13 @@ class Player_Raspi_Local(Player_Remote):
         Override Visualization of Local Player
             Also Visualize on the Raspi 
         """
-        board = self.game.get_board()
+        url = f"{self.api_url}/connect4/board"
+        
+        response = requests.get(url)
+        data = response.json()
+        
+        board = np.array(data["board"]).reshape(7, 8)
+        board = np.where(board == '', ' ', board)
         
         for i in range(7):
             for j in range(8):
@@ -100,6 +106,8 @@ class Player_Raspi_Local(Player_Remote):
             col (int):  Selected column (0...7)
         """
         col = 0
+
+        url = f"{self.api_url}/connect4/make_move"
         
         while True:
             self.visualize_choice(col)
@@ -119,24 +127,20 @@ class Player_Raspi_Local(Player_Remote):
                             col = 0
                             
                     elif event.direction == 'middle':
-                        if self.game.check_move(col, self.id):
+                        data = {
+                            "column": col,
+                            "player_id": str(self.id)
+                            }
+                        
+                        response = requests.post(url, json=data)
+
+
+                        if response.status_code == 200:
                             return col
                     
             time.sleep(0.1)
                 
                 
-            '''
-                move = int(input())  # Convert input to integer
-                if 0 <= move <= 7:  # Check if move is within the valid range [0-7]
-                    if self.game.check_move(move, self.id):  # Use self.game to validate
-                        return move
-                    else:
-                        print('Invalid move! Column is full.')
-                else:
-                    print('Invalid input! Please enter a number between 0 and 7.')
-            except ValueError:
-                print('Invalid input! Please enter a number between 0 and 7.')
-            '''
     
     def celebrate_win(self) -> None:
         """

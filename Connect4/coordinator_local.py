@@ -1,6 +1,6 @@
 from game import Connect4
 from player_local import Player_Local
-#from player_raspi_local import Player_Raspi_Local
+from player_raspi_local import Player_Raspi_Local
 
 
 
@@ -18,7 +18,7 @@ class Coordinator_Local:
         player2 (Player_Local or Player_Raspi_Local):   Local Instance of a Player
     """
 
-    def __init__(self, on_raspi:bool = False) -> None:
+    def __init__(self, on_raspi:bool = True) -> None:
         """
         Initialize the Coordinator_Local with a Game and 2 Players
 
@@ -28,20 +28,24 @@ class Coordinator_Local:
         
         self.game = Connect4()
         
-        self.player1 = Player_Local(self.game)
-        self.player2 = Player_Local(self.game)
         
-        self.player1.icon = self.player1.register_in_game()
-        self.player2.icon = self.player2.register_in_game()
         
-        '''
+
+        
+        
         if on_raspi:
             # Potentially share SenseHat instance between two players
             from sense_hat import SenseHat
+            self.sense = SenseHat()
+            
+            self.player1 = Player_Raspi_Local(self.game,self.sense)
+            self.player2 = Player_Raspi_Local(self.game,self.sense)
         else:
-            pass
-        raise NotImplementedError(f"You need to write this code first")
-        '''
+            self.player1 = Player_Local(self.game)
+            self.player2 = Player_Local(self.game)
+            
+        self.player1.icon = self.player1.register_in_game()
+        self.player2.icon = self.player2.register_in_game()
     
 
     def play(self):
@@ -70,4 +74,3 @@ class Coordinator_Local:
 if __name__ == "__main__":
     C = Coordinator_Local()
     C.play()
-

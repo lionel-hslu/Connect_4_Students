@@ -74,10 +74,10 @@ if __name__ == "__main__":
     api_url = "http://127.0.0.1:5000"  # Connect 4 API server URL
     
     # Uncomment the following lines to specify different URLs
-    # pc_url = "http://172.19.176.1:5000"
+    pc_url = "http://169.254.180.27:5000"
     # pc_url = "http://10.147.97.97:5000"
     # pc_url = "http://127.0.1.1:5000"
 
     # Initialize the Coordinator
-    c_remote = Coordinator_Remote(api_url=api_url)
+    c_remote = Coordinator_Remote(api_url=pc_url)
     c_remote.play()
