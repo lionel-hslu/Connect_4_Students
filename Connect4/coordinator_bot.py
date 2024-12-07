@@ -1,5 +1,5 @@
 from time import sleep
-from player_remote import Player_Remote
+from bot import Bot_Player
 
 
 class Coordinator_Remote:
@@ -38,7 +38,7 @@ class Coordinator_Remote:
                 raise ImportError("sense_hat module is not installed, but 'on_raspi' is set to True.")
 
         else:
-            self.player = Player_Remote(self.api_url)
+            self.player = Bot_Player(self.api_url)
 
     def wait_for_second_player(self):
         """
