@@ -1,5 +1,5 @@
 from time import sleep
-from bot import Bot_Player
+from random_bot import Bot_Player
 
 
 class Coordinator_Remote:

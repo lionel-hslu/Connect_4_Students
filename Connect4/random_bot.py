@@ -4,7 +4,6 @@ import requests
 from player import Player
 import numpy as np
 from random import randint
-from scipy.ndimage import convolve
 
 
 class Bot_Player(Player):
@@ -81,8 +80,11 @@ class Bot_Player(Player):
         Returns:
             int: The column chosen by the player for the move.
         """
-        url_move = f"{self.api_url}/connect4/make_move"
-
+        url = f"{self.api_url}/connect4/make_move"
+        
+        print(f"It's {self.icon}'s turn, which column do you select? [0-7]")
+        
+        
         while True:
             move = randint(0,7)
             data = {
@@ -90,7 +92,7 @@ class Bot_Player(Player):
                     "player_id": str(self.id)
                     }
             
-            response = requests.post(url_move, json=data)
+            response = requests.post(url, json=data)
             print(response)
             
             if response.status_code == 200:  # Use self.game to validate
