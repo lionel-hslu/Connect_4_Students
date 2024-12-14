@@ -1,5 +1,5 @@
 from time import sleep
-from random_bot import Bot_Player
+from good_bot import Bot_Player
 
 
 class Coordinator_Remote:
@@ -26,19 +26,7 @@ class Coordinator_Remote:
             api_url (str):      Address of Server, including Port Bsp: http://10.147.17.27:5000
         """
         self.api_url = api_url
-
-
-        if on_raspi:
-            try:
-                from sense_hat import SenseHat
-                from player_raspi_remote import Player_Raspi_Remote
-                self.sense = SenseHat()
-                self.player = Player_Raspi_Remote(self.api_url, self.sense)
-            except ImportError:
-                raise ImportError("sense_hat module is not installed, but 'on_raspi' is set to True.")
-
-        else:
-            self.player = Bot_Player(self.api_url)
+        self.player = Bot_Player(self.api_url)
 
     def wait_for_second_player(self):
         """

@@ -5,6 +5,7 @@ from player import Player
 import numpy as np
 from random import randint
 from scipy.ndimage import convolve
+import time
 
 
 class Bot_Player(Player):
@@ -44,8 +45,13 @@ class Bot_Player(Player):
         
         if response.status_code == 200:
             data = response.json()
-            player_icon = data.get('player_icon')
-            return(player_icon)
+            self.player_icon = data.get('player_icon')
+            if self.player_icon == 'X':
+                self.opponent_icon = 'O'
+            else:
+                self.opponent_icon = 'X'
+            
+            return(self.player_icon)
         
         else:
             return(response.status_code)
@@ -90,23 +96,125 @@ class Bot_Player(Player):
             board = np.array(data["board"]).reshape(7, 8)
             return board
         
-        def check_move(board, move):
-            if board[0,move] == '':
+        def check_move(move):
+            if self.board[0,move] == '':
                 return True
             else:
                 return False
-
-        score = 100000
-        move = 0
-
-        col = 8
-        row = 7
-        
-        while True:
-            for i in range(col):
-                board = get_board()
-                if check_move(board, i):
+            
+            
+        def place(c,icon):
+            i = 1
+            while True:
+                if self.board[-i, c] == '':
+                    self.board[-i, c] = icon
                     break
+                else:
+                    i += 1
+                        
+                        
+        def undo(c):
+            i = 1
+            while True:
+                if i == 7:
+                    self.board[-(i), c] = ''
+                    break
+                if self.board[-i, c] == '':
+                    self.board[-(i+1), c] = ''
+                    break
+                else:
+                    i += 1
+            
+            
+        def compare_score(s):
+            if s < self.score:
+                self.score = s
+                self.best_move = self.move
+                
+                
+        def debug():
+            return
+            #print(self.board)
+            #print(self.depth, 'depth')
+            
+                
+                
+            
+            
+        def check_self():
+            icon = self.player_icon
+            
+            for i in range(self.col):
+                debug()
+                if self.depth == 0:
+                    self.move = i
+                
+                if check_move(i):
+                    place(i,icon)
+                    if self.__detect_win(self.board):
+                        undo(i)
+                        compare_score(self.depth)
+                    else:
+                        self.depth +=1
+                        if self.depth != self.target_depth:
+                            check_opponend()
+                        self.depth -=1
+                        
+        
+        
+        def check_opponend():
+            icon = self.opponent_icon
+            
+            for i in range(self.col):
+                debug()
+                if check_move(i):
+                    place(i,icon)
+                    if self.__detect_win(self.board):
+                        if self.depth == 1:
+                            print(self.board)
+                            print(i, self.depth)
+                            self.counter_move = i
+                        undo(i)
+                        break
+                        
+                    else:
+                        self.depth +=1
+                        if self.depth != self.target_depth:
+                            check_self()
+                        self.depth -=1
+                        
+
+            
+
+        self.score = 100
+        self.depth = 0
+        self.target_depth = 10
+        self.move = None
+        self.best_move = None
+        self.counter_move = None
+
+        self.col = 8
+        self.board = get_board()
+        
+        if np.all(self.board == ''):
+            self.best_move = 4
+        else:
+            check_self()
+            
+        print(self.best_move)
+        print(self.counter_move)
+        time.sleep(5)
+        
+        url = f"{self.api_url}/connect4/make_move"
+        
+        if self.counter_move != None:
+            self.best_move = self.counter_move
+        
+        data = {'column': self.best_move, 'player_id': str(self.id)}
+        response = requests.post(url, json=data)
+
+        
+
 
                 
 
@@ -157,7 +265,7 @@ class Bot_Player(Player):
 
 
 
-    def __detect_win(self)->bool:
+    def __detect_win(self, board)->bool:
         """ 
         Detect if someone has won the game (4 consecutive same pieces).
         
@@ -172,17 +280,17 @@ class Bot_Player(Player):
 
         # Check for each player if there's a winning condition
         for player_to_check in ["X", "O"]:
-            player_board = (self.board == player_to_check).astype(int)
+            player_board = (board == player_to_check).astype(int)
 
             # Check all directions using convolution for 4 in a row
             if (convolve(player_board, horizontal_group, mode="constant", cval=0) == 4).any():
-                return player_to_check
+                return True
             if (convolve(player_board, vertical_group, mode="constant", cval=0) == 4).any():
-                return player_to_check
+                return True
             if (convolve(player_board, diag_down_group, mode="constant", cval=0) == 4).any():
-                return player_to_check
+                return True
             if (convolve(player_board, diag_up_group, mode="constant", cval=0) == 4).any():
-                return player_to_check
+                return True
 
         # Return False if no win condition is found for either player
         return None
