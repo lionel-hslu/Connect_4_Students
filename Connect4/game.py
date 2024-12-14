@@ -1,175 +1,146 @@
 import uuid
 import random
-
 from scipy.ndimage import convolve
 import numpy as np
-
 
 class Connect4:
     """
     Connect 4 Game Class
 
-        Defines rules of the Game
-            - what is a win
-            - where can you set / not set a coin
-            - how big is the playing field
+    Manages the rules and logic of the Connect 4 game, including:
+        - Defining win conditions
+        - Validating moves
+        - Managing the game board and player turns
 
-        Also keeps track of the current game  
-            - what is its state
-            - who is the active player?
-
-        Is used by the Coordinator
-            -> executes the methods of a Game object
+    Attributes:
+        p1 (Optional[uuid.UUID]): The unique identifier of Player 1.
+        p2 (Optional[uuid.UUID]): The unique identifier of Player 2.
+        p1_icon (str): Icon for Player 1 ('X').
+        p2_icon (str): Icon for Player 2 ('O').
+        board (np.ndarray): The game board represented as a 7x8 numpy array.
+        turn_counter (int): Tracks the current turn number.
+        winner (Optional[str]): Icon of the winning player, or None if no winner.
     """
-    
     def __init__(self) -> None:
-        """ 
-        Init a Connect 4 Game
-            - Create an empty Board
-            - Create to (non - registered and empty) players.
-            - Set the Turn Counter to 0
-            - Set the Winner to False
-            - etc.
         """
-        self.p1 = None
-        self.p2 = None
-        self.p1_icon = 'X'
-        self.p2_icon = 'O'
-        self.board = np.full((7,8), '')
-        self.turn_counter = -1
-        self.winner = None
+        Initialize a new Connect 4 game.
 
+        Sets up the game board, player icons, and game state.
+        """
+        self.p1: uuid.UUID | None = None
+        self.p2: uuid.UUID | None = None
+        self.p1_icon: str = 'X'
+        self.p2_icon: str = 'O'
+        self.board: np.ndarray = np.full((7, 8), '', dtype=str)
+        self.turn_counter: int = -1
+        self.winner: str | None = None
 
-    """
-    Methods to be exposed to the API later on
-    """
-    def get_status(self):
+    def get_status(self) -> dict[str, uuid.UUID | str | int | None]:
         """
-        Get the game's status.
-            - active player (id or icon)
-            - is there a winner? if so who?
-            - what turn is it?
+        Retrieve the current game status.
+
+        Returns:
+            dict: A dictionary containing:
+                - 'active_id' (uuid.UUID | None): ID of the active player.
+                - 'active_player' (str | None): Icon of the active player.
+                - 'winner' (str | None): Icon of the winner, if any.
+                - 'turn' (int): Current turn number.
         """
-        
         if self.turn_counter == -1:
             active_player = None
             active_id = None
-        
         elif self.turn_counter % 2:
             active_player = self.p2_icon
             active_id = self.p2
         else:
             active_player = self.p1_icon
             active_id = self.p1
-        
-        
-        
-        return({
+
+        return {
             'active_id': active_id,
             'active_player': active_player,
             'winner': self.winner,
-            'turn': self.turn_counter
-            })
+            'turn': self.turn_counter,
+        }
 
-    def register_player(self, player_id:uuid.UUID)->str:
-        """ 
-        Register a player with a unique ID
-            Save his ID as one of the local players
-        
+    def register_player(self, player_id: uuid.UUID) -> str | bool:
+        """
+        Register a player in the game.
+
         Parameters:
-            player_id (UUID)    Unique ID
+            player_id (uuid.UUID): Unique identifier for the player.
 
         Returns:
-            icon:       Player Icon (or None if failed)
+            str: The player's assigned icon ('X' or 'O').
+            bool: False if the game is full and no more players can register.
         """
-        if self.p1 == None:
+        if self.p1 is None:
             self.p1 = player_id
-            return('X')
-        elif self.p2 == None:
+            return 'X'
+        elif self.p2 is None:
             self.p2 = player_id
-            self.turn_counter +=1
-            return('O')
-        
+            self.turn_counter += 1
+            return 'O'
         else:
-            return(False)
+            return False
 
-
-    def get_board(self)-> np.ndarray:
-        """ 
-        Return the current board state (For Example an Array of all Elements)
+    def get_board(self) -> np.ndarray:
+        """
+        Get the current state of the game board.
 
         Returns:
-            board
+            np.ndarray: A 7x8 numpy array representing the game board.
         """
-        return(self.board)
+        return self.board
 
-
-    def check_move(self, column:int, player_Id:uuid.UUID) -> bool:
-        """ 
-        Check move of a certain player is legal
-            If a certain player can make the requested move
+    def check_move(self, column: int, player_id: uuid.UUID) -> bool:
+        """
+        Validate and execute a player's move.
 
         Parameters:
-            col (int):      Selected Column of Coin Drop
-            player (str):   Player ID 
+            column (int): The column where the player wants to drop their piece (0-indexed).
+            player_id (uuid.UUID): The unique identifier of the player making the move.
+
+        Returns:
+            bool: True if the move is valid and executed, False otherwise.
         """
-        if player_Id == self.get_status()['active_id']:
-            if self.board[0,column] == '':
-                
-                if player_Id == self.p1:
-                    icon = 'X'
-                if player_Id == self.p2:
-                    icon = 'O'
-                
-                i = 1    
+        if player_id == self.get_status()['active_id']:
+            if self.board[0, column] == '':
+                icon = 'X' if player_id == self.p1 else 'O'
+                i = 1
                 while True:
-                    if self.board[-i,column] == '':
+                    if self.board[-i, column] == '':
                         self.board[-i, column] = icon
                         break
                     else:
                         i += 1
-                
                 self.__update_status()
-                return(True)
-            else:
-                return(False)
-        else:
-            return(False)
-        
-    """ 
-    Internal Method (for Game Logic)
-    """
-    def __update_status(self):
-        """ 
-        Update all values for the status (after each successful move)
-            - active player
-            - active ID
-            - winner
-            - turn_number
-        """
+                return True
+        return False
 
+    def __update_status(self) -> None:
+        """
+        Update the game status after a valid move.
+
+        Updates turn counter, active player, and checks for a winner.
+        """
         self.turn_counter += 1
         self.winner = self.__detect_win()
-    
 
-    def __detect_win(self)->bool:
-        """ 
-        Detect if someone has won the game (4 consecutive same pieces).
-        
+    def __detect_win(self) -> str | None:
+        """
+        Detect if there is a winner in the game.
+
         Returns:
-            True if there's a winner, False otherwise
-        """    
-        # Define convolution kernels for detecting a win condition
+            str: The winning player's icon ('X' or 'O'), or None if no winner.
+        """
         horizontal_group = np.array([[1, 1, 1, 1]])
         vertical_group = np.array([[1], [1], [1], [1]])
-        diag_down_group = np.eye(4, dtype=int)  # Top-left to bottom-right
-        diag_up_group = np.flipud(diag_down_group)  # Bottom-left to top-right
+        diag_down_group = np.eye(4, dtype=int)
+        diag_up_group = np.flipud(diag_down_group)
 
-        # Check for each player if there's a winning condition
-        for player_to_check in ["X", "O"]:
+        for player_to_check in ['X', 'O']:
             player_board = (self.board == player_to_check).astype(int)
-
-            # Check all directions using convolution for 4 in a row
             if (convolve(player_board, horizontal_group, mode="constant", cval=0) == 4).any():
                 return player_to_check
             if (convolve(player_board, vertical_group, mode="constant", cval=0) == 4).any():
@@ -179,5 +150,4 @@ class Connect4:
             if (convolve(player_board, diag_up_group, mode="constant", cval=0) == 4).any():
                 return player_to_check
 
-        # Return False if no win condition is found for either player
         return None

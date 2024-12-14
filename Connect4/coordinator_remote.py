@@ -14,19 +14,22 @@ class Coordinator_Remote:
 
     Attributes:
         api_url (str):      Address of Server, including Port Bsp: http://10.147.17.27:5000
-        player (Player):    Local Instance of ONE remote Player (Raspi or Normal)
-        sense (SenseHat):   Optional Local Instance of a SenseHat (if on Raspi)
+        player (Player_Remote):    Local Instance of ONE remote Player (Raspi or Normal)
+        sense (Optional[SenseHat]):   Optional Local Instance of a SenseHat (if on Raspi)
     """
 
-    def __init__(self, api_url: str, on_raspi:bool = False) -> None:
+    def __init__(self, api_url: str, on_raspi: bool = False) -> None:
         """
         Initialize the Coordinator_Remote.
 
         Parameters:
             api_url (str):      Address of Server, including Port Bsp: http://10.147.17.27:5000
-        """
-        self.api_url = api_url
+            on_raspi (bool):    Specifies if the game is played on a Raspberry Pi with SenseHat (default: False).
 
+        Raises:
+            ImportError: If `on_raspi` is True and the SenseHat module is not installed.
+        """
+        self.api_url: str = api_url
 
         if on_raspi:
             try:
@@ -36,11 +39,10 @@ class Coordinator_Remote:
                 self.player = Player_Raspi_Remote(self.api_url, self.sense)
             except ImportError:
                 raise ImportError("sense_hat module is not installed, but 'on_raspi' is set to True.")
-
         else:
             self.player = Player_Remote(self.api_url)
 
-    def wait_for_second_player(self):
+    def wait_for_second_player(self) -> None:
         """
         Waits for the second player to connect.
 
@@ -50,9 +52,8 @@ class Coordinator_Remote:
         self.player.visualize()
         print('Waiting for other Player.')
         sleep(1)
-        
 
-    def play(self):
+    def play(self) -> None:
         """ 
         Main function to play the game with two remote players.
 
@@ -67,21 +68,14 @@ class Coordinator_Remote:
             if winner:
                 self.player.celebrate_win()
                 break
-            
             else:
                 if str(active) == str(self.player.id):
                     self.player.visualize()
                     self.player.make_move()
                 else:
                     self.wait_for_second_player()
-                
-        
-        
-        
-        
-        
 
-# To start a game
+
 if __name__ == "__main__":
     api_url = "http://127.0.0.1:5000"  # Connect 4 API server URL
     
@@ -91,5 +85,5 @@ if __name__ == "__main__":
     # pc_url = "http://127.0.1.1:5000"
 
     # Initialize the Coordinator
-    c_remote = Coordinator_Remote(api_url=pc_url)
+    c_remote = Coordinator_Remote(api_url=api_url)
     c_remote.play()
