@@ -1,167 +1,100 @@
 import time
-
 from sense_hat import SenseHat
-
 from game import Connect4
 from player_local import Player_Local
 
-
 class Player_Raspi_Local(Player_Local):
     """ 
-    Local Raspi Player 
-        Same as Local Player -> with some changed methods
-            (uses Methods of Game and SenseHat)
+    Local Raspberry Pi Player implementation for Connect4.
+
+    Extends the local player with visualization and input using the Raspberry Pi Sense HAT.
+
+    Attributes:
+        sense (SenseHat): Instance of the Sense HAT for input and visualization.
+        color (tuple[int, int, int]): RGB color for the player's icon on the Sense HAT.
     """
 
-    def __init__(self, game:Connect4, sense:SenseHat, **kwargs) -> None:
-        """ 
-        Initialize a local Raspi player with a shared SenseHat instance.
+    def __init__(self, game: Connect4, sense: SenseHat, **kwargs) -> None:
+        """
+        Initialize a local Raspberry Pi player with a shared Sense HAT instance.
 
         Parameters:
-            game (Connect4): Game instance.
-            sense (SenseHat): Shared SenseHat instance for all players. (if SHARED option is used)
-        
-        Raises:
-            ValueError: If 'sense' is not provided in kwargs.
+            game (Connect4): The Connect4 game instance.
+            sense (SenseHat): The shared Sense HAT instance.
         """
-        # Initialize the parent class (Player_Local)
-        self.game = game
-        self.sense = sense
-        
-        super().__init__(self.game, **kwargs)
-        
-
-        # Extract the SenseHat instance from kwargs  (only if SHARED instance)
-        # Remove Otherwise
-        '''
-        try:
-            self.sense: SenseHat = kwargs["sense"]
-        except KeyError:
-            raise ValueError(f"{type(self).__name__} requires a 'sense' (SenseHat instance) attribute")
-        '''
+        self.sense: SenseHat = sense
+        super().__init__(game, **kwargs)
         self.sense.clear()
-        
 
-    
-    def register_in_game(self):
+    def register_in_game(self) -> str:
         """
-        Register in game
-            Set Player Icon 
-            Set Player Color
+        Register the player in the game and assign the player an icon.
+
+        Additionally, sets the player's color based on their assigned icon.
+
+        Returns:
+            str: The player's icon ('X' or 'O').
         """
-        # first do normal register
-        self.icon = super().register_in_game()          # call method of Parent Class (Player_Local)
+        self.icon = super().register_in_game()
+        self.color = (100, 0, 0) if self.icon == 'X' else (100, 100, 0)
+        return self.icon
 
-        if self.icon == 'X':
-            self.color = (100,0,0)
-        
-        else:
-            self.color = (100,100,0)
-
-    
-    def visualize_choice(self, column:int)->None:
-        """ 
-        Visualize the SELECTION process of choosing a column
-            Toggles the LED on the top row of the currently selected column
+    def visualize_choice(self, column: int) -> None:
+        """
+        Visualize the column selection process using the Sense HAT.
 
         Parameters:
-            column (int):       potentially selected Column during Selection Process
+            column (int): The currently selected column.
         """
-        
-        self.sense.set_pixel(column,0,self.color)
+        self.sense.set_pixel(column, 0, self.color)
         time.sleep(0.1)
-        self.sense.set_pixel(column,0,0,0,0)
-        
+        self.sense.set_pixel(column, 0, 0, 0, 0)
 
     def visualize(self) -> None:
         """
-        Override Visualization of Local Player
-            Also Visualize on the Raspi 
+        Override visualization to update the Sense HAT LED matrix with the current board state.
         """
         board = self.game.get_board()
-        
         for i in range(7):
             for j in range(8):
-                if board[i,j] == 'X':
-                    self.sense.set_pixel(j,i+1,100,0,0)
-                elif board[i,j] == 'O':
-                    self.sense.set_pixel(j,i+1,100,100,0)
-
-        # OPTIONAL: also visualize on CLI
+                if board[i, j] == 'X':
+                    self.sense.set_pixel(j, i + 1, 100, 0, 0)
+                elif board[i, j] == 'O':
+                    self.sense.set_pixel(j, i + 1, 100, 100, 0)
         super().visualize()
-
 
     def make_move(self) -> int:
         """
-        Override make_move for Raspberry Pi input using the Sense HAT joystick.
-        Uses joystick to move left or right and select a column.
+        Use the Sense HAT joystick to select a column for the move.
 
         Returns:
-            col (int):  Selected column (0...7)
+            int: The selected column for the move.
         """
         col = 0
-        
         while True:
             self.visualize_choice(col)
-            
             for event in self.sense.stick.get_events():
                 if event.action == 'pressed':
                     if event.direction == 'left':
-                        if col != 0:
-                            col -= 1
-                        else:
-                            col = 7
-                    
+                        col = (col - 1) % 8
                     elif event.direction == 'right':
-                        if col != 7:
-                            col += 1
-                        else:
-                            col = 0
-                            
+                        col = (col + 1) % 8
                     elif event.direction == 'middle':
                         if self.game.check_move(col, self.id):
                             return col
-                    
             time.sleep(0.1)
-                
-                
-            '''
-                move = int(input())  # Convert input to integer
-                if 0 <= move <= 7:  # Check if move is within the valid range [0-7]
-                    if self.game.check_move(move, self.id):  # Use self.game to validate
-                        return move
-                    else:
-                        print('Invalid move! Column is full.')
-                else:
-                    print('Invalid input! Please enter a number between 0 and 7.')
-            except ValueError:
-                print('Invalid input! Please enter a number between 0 and 7.')
-            '''
-    
+
     def celebrate_win(self) -> None:
         """
-        Celebrate CLI Win of Raspi player
-            Override Method of Local Player
+        Celebrate a win by flashing the Sense HAT LEDs in the player's color.
         """
-        
         winner = self.get_game_status()['winner']
-        
-        if winner == 'X':
-            color = (100,0,0)
-        else:
-            color = (100,100,0)
-            
-        pixels = [color]*64
-            
-        for i in range(10):
+        color = (100, 0, 0) if winner == 'X' else (100, 100, 0)
+        pixels = [color] * 64
+        for _ in range(10):
             self.sense.set_pixels(pixels)
             time.sleep(0.1)
             self.sense.clear()
             time.sleep(0.1)
-            
         self.sense.clear()
-
-
-        # Optional: also do CLI celebration
         super().celebrate_win()
-
