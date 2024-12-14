@@ -80,142 +80,141 @@ class Bot_Player(Player):
         data = response.json()
         return(data)
 
+
     def make_move(self) -> int:
-        """ 
-        Prompt the physical player to enter a move via the console.
+            """ 
+            Prompt the physical player to enter a move via the console.
 
-        Returns:
-            int: The column chosen by the player for the move.
-        """
-        url_move = f"{self.api_url}/connect4/make_move"
+            Returns:
+                int: The column chosen by the player for the move.
+            """
+            url_move = f"{self.api_url}/connect4/make_move"
 
-        def get_board():
-            url_board = f"{self.api_url}/connect4/board"
-            response = requests.get(url_board)
-            data = response.json()
-            board = np.array(data["board"]).reshape(7, 8)
-            return board
-        
-        def check_move(move):
-            if self.board[0,move] == '':
-                return True
-            else:
-                return False
+            def get_board():
+                url_board = f"{self.api_url}/connect4/board"
+                response = requests.get(url_board)
+                data = response.json()
+                board = np.array(data["board"]).reshape(7, 8)
+                return board
             
-            
-        def place(c,icon):
-            i = 1
-            while True:
-                if self.board[-i, c] == '':
-                    self.board[-i, c] = icon
-                    break
+            def check_move(move):
+                if self.board[0,move] == '':
+                    return True
                 else:
-                    i += 1
-                        
-                        
-        def undo(c):
-            i = 1
-            while True:
-                if i == 7:
-                    self.board[-(i), c] = ''
-                    break
-                if self.board[-i, c] == '':
-                    self.board[-(i+1), c] = ''
-                    break
-                else:
-                    i += 1
-            
-            
-        def compare_score(s):
-            if s < self.score:
-                self.score = s
-                self.best_move = self.move
+                    return False
                 
                 
-        def debug():
-            return
-            #print(self.board)
-            #print(self.depth, 'depth')
-            
-                
-                
-            
-            
-        def check_self():
-            icon = self.player_icon
-            
-            for i in range(self.col):
-                debug()
-                if self.depth == 0:
-                    self.move = i
-                
-                if check_move(i):
-                    place(i,icon)
-                    if self.__detect_win(self.board):
-                        undo(i)
-                        compare_score(self.depth)
-                    else:
-                        self.depth +=1
-                        if self.depth != self.target_depth:
-                            check_opponend()
-                        self.depth -=1
-                        
-        
-        
-        def check_opponend():
-            icon = self.opponent_icon
-            
-            for i in range(self.col):
-                debug()
-                if check_move(i):
-                    place(i,icon)
-                    if self.__detect_win(self.board):
-                        if self.depth == 1:
-                            print(self.board)
-                            print(i, self.depth)
-                            self.counter_move = i
-                        undo(i)
+            def place(c,icon):
+                i = 1
+                while True:
+                    if self.board[-i, c] == '':
+                        self.board[-i, c] = icon
                         break
-                        
                     else:
-                        self.depth +=1
-                        if self.depth != self.target_depth:
-                            check_self()
-                        self.depth -=1
+                        i += 1
+                            
+                            
+            def undo(c):
+                i = 0
+                while True:
+                    if self.board[i, c] != '':
+                        self.board[i, c] = ''
+                        break
+                    else:
+                        i += 1
+                
+            
+                    
+                    
+            def debug():
+                return
+                #print(self.board)
+                #print(self.depth, 'depth')
+                
+                    
+                    
+                
+                
+            def check_self(score):
+                icon = self.player_icon
+                
+                for i in range(self.n_col):
+                    debug()
+                    if check_move(i):
+                        place(i,icon)
+                        if self.__detect_win(self.board):
+                            if score is None:
+                                score = 0
+                            score = int(score + int(self.target_depth-self.depth))
+                            undo(i)
+                            return score
+                            
+                        else:
+                            self.depth +=1
+                            if self.depth != self.target_depth:
+                                score = check_opponend(score)
+                            self.depth -=1
                         
+                return score
+                            
+            
+            
+            def check_opponend(score):
+                icon = self.opponent_icon
+                
+                for i in range(self.n_col):
+                    debug()
+                    if check_move(i):
+                        place(i,icon)
+                        if self.__detect_win(self.board):
+                            if score is None:
+                                score = 0
+                            score = int(score - 10**(self.target_depth-self.depth))
+                            print(score)
+                            undo(i)
+                            return score
+                            
+                        else:
+                            self.depth +=1
+                            if self.depth != self.target_depth:
+                                score = check_self(score)
+                            self.depth -=1
+                    
+                return score
+                            
 
+                
+
+            self.target_depth = 60
+            self.board = get_board()
+            self.n_col = 8
+            col_list = [[i, 0] for i in range(self.n_col)]
+            
+            for entry in col_list:
+                self.depth = 0
+                col = entry[0]
+                score = int(entry[1])
+                if check_move(col):
+                    place(col,self.player_icon)
+                    entry[1] = check_opponend(score)
+                    if entry[1] is None:
+                        entry[1]=0
+                    undo(col)
+
+            print(col_list)
             
 
-        self.score = 100
-        self.depth = 0
-        self.target_depth = 10
-        self.move = None
-        self.best_move = None
-        self.counter_move = None
 
-        self.col = 8
-        self.board = get_board()
-        
-        if np.all(self.board == ''):
-            self.best_move = 4
-        else:
-            check_self()
+            max_entry = max(col_list, key=lambda x: x[1])
+            max_index = int(max_entry[0])
+
+
+
+
             
-        print(self.best_move)
-        print(self.counter_move)
-        time.sleep(5)
-        
-        url = f"{self.api_url}/connect4/make_move"
-        
-        if self.counter_move != None:
-            self.best_move = self.counter_move
-        
-        data = {'column': self.best_move, 'player_id': str(self.id)}
-        response = requests.post(url, json=data)
-
-        
-
-
+            url = f"{self.api_url}/connect4/make_move"            
+            data = {'column': max_index, 'player_id': str(self.id)}
+            response = requests.post(url, json=data)
                 
 
                 
@@ -254,7 +253,7 @@ class Bot_Player(Player):
         """
         Celebration of Local CLI Player
         """
-        self.visualize()
+        #self.visualize()
         winner = self.get_game_status()['winner']
         print(f'Player {winner} won.')
 
@@ -293,6 +292,6 @@ class Bot_Player(Player):
                 return True
 
         # Return False if no win condition is found for either player
-        return None
+        return False
     
 

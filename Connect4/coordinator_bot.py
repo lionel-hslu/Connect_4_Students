@@ -35,7 +35,7 @@ class Coordinator_Remote:
         This method checks the game status until the second player is detected,
         indicating that the game can start.
         """
-        self.player.visualize()
+        #self.player.visualize()
         print('Waiting for other Player.')
         sleep(1)
         
@@ -58,7 +58,7 @@ class Coordinator_Remote:
             
             else:
                 if str(active) == str(self.player.id):
-                    self.player.visualize()
+                    #self.player.visualize()
                     self.player.make_move()
                 else:
                     self.wait_for_second_player()
