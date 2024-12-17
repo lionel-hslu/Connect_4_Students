@@ -127,79 +127,76 @@ class Bot_Player(Player):
                     
                     
             def debug():
-                return
-                #print(self.board)
-                #print(self.depth, 'depth')
+                print(self.board)
+                print(self.depth, 'depth')
                 
                     
                     
-                
-                
-            def check_self(score):
+                            
+            
+            def check_self():
                 icon = self.player_icon
+                self.depth +=1
                 
                 for i in range(self.n_col):
-                    debug()
                     if check_move(i):
                         place(i,icon)
                         if self.__detect_win(self.board):
-                            if score is None:
-                                score = 0
-                            score = int(score + int(self.target_depth-self.depth))
-                            undo(i)
-                            return score
+                            self.score_list.append((self.target_depth-self.depth))
                             
                         else:
-                            self.depth +=1
                             if self.depth != self.target_depth:
-                                score = check_opponend(score)
-                            self.depth -=1
-                        
-                return score
-                            
+                                check_opponend()
+                        undo(i)
+                
+                self.depth -=1
+                return
             
             
-            def check_opponend(score):
+            
+            
+            
+            def check_opponend():
                 icon = self.opponent_icon
+                self.depth +=1
                 
                 for i in range(self.n_col):
-                    debug()
                     if check_move(i):
                         place(i,icon)
                         if self.__detect_win(self.board):
-                            if score is None:
-                                score = 0
-                            score = int(score - 10**(self.target_depth-self.depth))
-                            print(score)
-                            undo(i)
-                            return score
+                            self.score_list.append(-10*(self.target_depth-self.depth))
                             
                         else:
-                            self.depth +=1
                             if self.depth != self.target_depth:
-                                score = check_self(score)
-                            self.depth -=1
-                    
-                return score
+                                check_self()
+                        undo(i)
+                
+                self.depth -=1
+                return
                             
 
                 
 
-            self.target_depth = 60
+            self.target_depth = 6
             self.board = get_board()
             self.n_col = 8
             col_list = [[i, 0] for i in range(self.n_col)]
             
             for entry in col_list:
+                self.score_list = []
                 self.depth = 0
                 col = entry[0]
-                score = int(entry[1])
                 if check_move(col):
                     place(col,self.player_icon)
-                    entry[1] = check_opponend(score)
-                    if entry[1] is None:
-                        entry[1]=0
+                    if self.__detect_win(self.board):
+                        self.score_list.append(10000000)
+                    else:
+                        check_opponend()
                     undo(col)
+                else:
+                    self.score_list.append(-10000000)
+                entry[1] = sum(self.score_list)
+                print(sum(self.score_list))
 
             print(col_list)
             
@@ -214,7 +211,7 @@ class Bot_Player(Player):
             
             url = f"{self.api_url}/connect4/make_move"            
             data = {'column': max_index, 'player_id': str(self.id)}
-            response = requests.post(url, json=data)
+            requests.post(url, json=data)
                 
 
                 

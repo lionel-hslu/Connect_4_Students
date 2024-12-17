@@ -36,7 +36,7 @@ class Coordinator_Remote:
         indicating that the game can start.
         """
         #self.player.visualize()
-        print('Waiting for other Player.')
+        #print('Waiting for other Player.')
         sleep(1)
         
 
