@@ -1,5 +1,5 @@
 from time import sleep
-from good_bot import Bot_Player
+from faster_good_bot import Bot_Player
 
 
 class Coordinator_Remote:
@@ -35,8 +35,8 @@ class Coordinator_Remote:
         This method checks the game status until the second player is detected,
         indicating that the game can start.
         """
-        #self.player.visualize()
-        #print('Waiting for other Player.')
+        self.player.visualize()
+        print('Waiting for other Player.')
         sleep(1)
         
 
