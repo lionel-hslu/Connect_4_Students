@@ -74,7 +74,7 @@ if __name__ == "__main__":
     api_url = "http://127.0.0.1:5000"  # Connect 4 API server URL
     
     # Uncomment the following lines to specify different URLs
-    # pc_url = "http://172.19.176.1:5000"
+    pc_url = "http://172.19.176.1:5000"
     # pc_url = "http://10.147.97.97:5000"
     # pc_url = "http://127.0.1.1:5000"
 

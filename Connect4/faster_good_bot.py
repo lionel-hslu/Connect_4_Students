@@ -2,7 +2,8 @@ import os
 import requests
 from player import Player
 import numpy as np # type: ignore
-from move_class import MoveEvaluator
+from move_class_v2 import MoveEvaluator
+import time
 
 
 class Bot_Player(Player):
@@ -82,7 +83,6 @@ class Bot_Player(Player):
         data = response.json()
         return(data)
 
-
     def make_move(self) -> None:
         """ 
         Prompt the physical player to enter a move via the console.
@@ -91,6 +91,8 @@ class Bot_Player(Player):
             int: The column chosen by the player for the move.
         """
         self.visualize()
+
+        start_time = time.time()
         board = self.get_board()
         
         if np.all(board == ''):
@@ -102,7 +104,11 @@ class Bot_Player(Player):
         url = f"{self.api_url}/connect4/make_move"            
         data = {'column': best_move, 'player_id': str(self.id)}
         requests.post(url, json=data)
-                
+
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"Elapsed time: {elapsed_time:.6f} seconds")
+        time.sleep(1)
 
                 
         
